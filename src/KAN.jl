@@ -1,4 +1,4 @@
-module KolmogorovArnold
+module KAN
 
 using Random
 using LinearAlgebra
@@ -16,8 +16,5 @@ export rbf, rswaf, iqf
 
 include("kdense.jl")
 export KDense
-
-# include("explicit")
-# export GDense
 
 end # module
