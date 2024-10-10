@@ -71,7 +71,7 @@ function LuxCore.initialparameters(
     l::KDense{use_base_act}
 ) where{use_base_act}
     p = (;
-        C = l.init_C(rng, l.out_dims, l.grid_len * l.in_dims), # [O, G, I]
+        C = l.init_C(rng, l.out_dims, l.grid_len * l.in_dims), # [O, G * I]
     )
 
     if use_base_act
@@ -106,14 +106,14 @@ function LuxCore.parameterlength(
 end
 
 function (l::KDense{use_base_act})(x::AbstractArray, p, st) where{use_base_act}
-    size_in  = size(x)                          # [I, ..., batch,]
-    size_out = (l.out_dims, size_in[2:end]...,) # [O, ..., batch,]
+    size_in  = size(x)                                 # [I, ..., batch]
+    size_out = (l.out_dims, size_in[2:end]...,)           # [O, ..., batch]
 
-    x = reshape(x, l.in_dims, :)
+    x = reshape(x, l.in_dims, :)                          # [I, k]
     K = size(x, 2)
 
-    x_norm = _broadcast(l.normalizer, x)                  # ∈ [-1, 1]
-    x_resh = reshape(x_norm, 1, :)                        # [1, K]
+    x_norm = _broadcast(l.normalizer, x)                  # normalized to within grid_lims
+    x_resh = reshape(x_norm, 1, :)                        # [1, I * K]
     basis  = l.basis_func(x_resh, st.grid, l.denominator) # [G, I * K]
     basis  = reshape(basis, l.grid_len * l.in_dims, K)    # [G * I, K]
     spline = p.C * basis                                  # [O, K]
@@ -125,6 +125,6 @@ function (l::KDense{use_base_act})(x::AbstractArray, p, st) where{use_base_act}
         spline
     end
 
-    reshape(y, size_out), st
+    reshape(y, size_out), st                      # [0, ..., batch], st
 end
 #======================================================#
